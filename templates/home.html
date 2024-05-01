@@ -1,0 +1,80 @@
+<!-- home.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather Monitoring App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  </head>
+  <body>
+    <div
+      class="bg-zinc-100 dark:bg-zinc-800 min-h-screen flex flex-col items-center justify-center"
+    >
+      <h1
+        class="text-3xl font-bold text-center mb-4 text-zinc-800 uppercase dark:text-zinc-200"
+      >
+        Welcome to Weather Monitoring App
+      </h1>
+      <div
+        id="cities-list"
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
+      >
+        <!-- Display list of cities being tracked with their weather data -->
+      </div>
+      
+    </div>
+    <button
+      class="text-white absolute top-5 right-5 bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded"
+      onclick="addCity()"
+    >
+      Add City
+    </button>
+
+    <script>
+      function deleteCity(cityId) {
+        fetch(`/delete_city/${cityId}`, {
+          method: "DELETE",
+        }).then(() => fetchCities());
+      }
+
+      function fetchCities() {
+        fetch("/cities")
+          .then((response) => response.json())
+          .then((data) => {
+            const citiesList = document.getElementById("cities-list");
+            citiesList.innerHTML = "";
+            data.forEach((city) => {
+              const cityElement = document.createElement("div");
+              cityElement.innerHTML = `
+                    <div class="bg-white dark:bg-zinc-700 p-4 rounded-lg shadow-md w-full">
+                        <p class="text-lg font-semibold text-zinc-800 uppercase dark:text-zinc-200">${city.city_name}</p>
+                        <p class="text-zinc-600 dark:text-zinc-300">Temperature: ${city.temperature}K</p>
+                        <p class="text-zinc-600 dark:text-zinc-300">Humidity: ${city.humidity}RH</p>
+                        <button class="border-2 border-red-500 px-2 py-1 rounded  hover:bg-red-500 text-white" onclick="deleteCity(${city.id})">Delete</button>
+                        </div>
+                `;
+              citiesList.appendChild(cityElement);
+            });
+          });
+      }
+      // Function to add a new city
+      function addCity() {
+        const cityName = prompt("Enter city name:");
+        fetch("/add_city", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ city: cityName }),
+        }).then(() => fetchCities());
+      }
+      // Fetch cities on page load
+      fetchCities();
+
+      function getGraph(city_name) {}
+    </script>
+  </body>
+</html>
