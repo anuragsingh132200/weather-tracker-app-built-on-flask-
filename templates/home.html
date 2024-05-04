@@ -1,109 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weather Monitoring App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  </head>
-  <body>
-    <div
-      class="bg-zinc-100 dark:bg-zinc-800 min-h-screen flex flex-col items-center justify-center"
-    >
-      <h1
-        class="text-3xl font-bold text-center mb-4 text-zinc-800 uppercase dark:text-zinc-200"
-      >
-        Welcome to Weather Monitoring App
-      </h1>
-      <div
-        id="cities-list"
-        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
-      >
-        <!-- Display list of cities being tracked with their weather data -->
-      </div>
-      <canvas id="temperature-chart" width="400" height="200"></canvas>
+</head>
+<body>
+    <div class="bg-zinc-100 dark:bg-zinc-800 min-h-screen flex flex-col items-center justify-center">
+        <h1 class="text-3xl font-bold text-center mb-4 text-zinc-800 uppercase dark:text-zinc-200">Welcome to Weather Monitoring App</h1>
+        <div id="cities-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <!-- Display list of cities being tracked with their weather data -->
+        </div>
+        <canvas id="temperature-chart" width="800" height="400"></canvas>
     </div>
-    <button
-      class="text-white absolute top-5 right-5 bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded"
-      onclick="addCity()"
-    >
-      Add City
-    </button>
+    <button class="text-white absolute top-5 right-5 bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded" onclick="addCity()">Add City</button>
 
     <script>
-      // Function to fetch cities and update DOM
-      function fetchCities() {
-        fetch("/cities")
-          .then((response) => response.json())
-          .then((data) => {
-            const citiesList = document.getElementById("cities-list");
-            citiesList.innerHTML = "";
-            data.forEach((city) => {
-              const cityElement = document.createElement("div");
-              cityElement.innerHTML = `
-                    <div class="bg-white dark:bg-zinc-700 p-4 rounded-lg shadow-md w-full">
-                        <p class="text-lg font-semibold text-zinc-800 uppercase dark:text-zinc-200">${city.city_name}</p>
-                        <p class="text-zinc-600 dark:text-zinc-300">Temperature: ${city.temperature}K</p>
-                        <p class="text-zinc-600 dark:text-zinc-300">Humidity: ${city.humidity}RH</p>
-                        <button class="border-2 border-red-500 px-2 py-1 rounded  hover:bg-red-500 text-white" onclick="deleteCity(${city.id})">Delete</button>
-                    </div>
-                `;
-              citiesList.appendChild(cityElement);
-            });
-          });
-      }
-
-      // Function to add a new city
-      function addCity() {
-        const cityName = prompt("Enter city name:");
-        fetch("/add_city", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ city: cityName }),
-        }).then(() => fetchCities());
-      }
-
-      // Fetch cities on page load
-      fetchCities();
-
-      // Chart.js for plotting temperature graph
-      var ctx = document.getElementById('temperature-chart').getContext('2d');
-      var temperatureChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: [], // Array to store time stamps
-          datasets: [{
-            label: 'Temperature',
-            data: [], // Array to store temperature readings
-            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-            borderColor: 'rgba(255, 99, 132, 1)',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
+        function deleteCity(cityId) {
+            fetch(`/delete_city/${cityId}`, {
+                method: "DELETE",
+            }).then(() => fetchCities());
         }
-      });
 
-      // Function to update temperature chart
-      function updateTemperatureChart() {
-        // Add current time stamp
-        temperatureChart.data.labels.push(new Date().toLocaleTimeString());
-        // Add last temperature reading from weather_data array
-        temperatureChart.data.datasets[0].data.push(weather_data[weather_data.length - 1][1]);
-        // Update chart
-        temperatureChart.update();
-      }
+        function fetchCities() {
+            fetch("/cities")
+                .then((response) => response.json())
+                .then((data) => {
+                    const citiesList = document.getElementById("cities-list");
+                    citiesList.innerHTML = "";
+                    data.forEach((city) => {
+                        const cityElement = document.createElement("div");
+                        cityElement.innerHTML = `
+                            <div class="bg-white dark:bg-zinc-700 p-4 rounded-lg shadow-md w-full">
+                                <p class="text-lg font-semibold text-zinc-800 uppercase dark:text-zinc-200">${city.city_name}</p>
+                                <p class="text-zinc-600 dark:text-zinc-300">Temperatures: ${city.temperatures.join(', ')}K</p>
+                                <button class="border-2 border-red-500 px-2 py-1 rounded  hover:bg-red-500 text-white" onclick="deleteCity(${city.id})">Delete</button>
+                            </div>
+                        `;
+                        citiesList.appendChild(cityElement);
+                    });
+                });
+        }
 
-      // Update temperature chart every 5 minutes
-      setInterval(updateTemperatureChart, 5 * 60 * 1000);
+        // Function to add a new city
+        function addCity() {
+            const cityName = prompt("Enter city name:");
+            fetch("/add_city", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ city: cityName }),
+            }).then(() => fetchCities());
+        }
+
+        // Fetch cities on page load
+        fetchCities();
+
+        // Function to plot temperature chart
+        function plotTemperatureChart(cityName) {
+            fetch(`/weather_data/${cityName}`)
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById('temperature-chart').getContext('2d');
+                    const temperatures = data.temperatures.map(temp => parseFloat(temp));
+                    const chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: Array.from({ length: temperatures.length }, (_, i) => i + 1),
+                            datasets: [{
+                                label: `Temperature Readings for ${data.city_name}`,
+                                data: temperatures,
+                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: false
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => console.error('Error fetching temperature data:', error));
+        }
+
+        // Example usage: plotTemperatureChart('CityName');
     </script>
-  </body>
+</body>
 </html>
