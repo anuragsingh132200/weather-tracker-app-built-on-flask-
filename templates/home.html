@@ -1,4 +1,3 @@
-<!-- home.html -->
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -6,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Weather Monitoring App</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
     <div
@@ -24,7 +22,7 @@
       >
         <!-- Display list of cities being tracked with their weather data -->
       </div>
-      
+      <canvas id="temperature-chart" width="400" height="200"></canvas>
     </div>
     <button
       class="text-white absolute top-5 right-5 bg-blue-500 hover:bg-blue-700 font-bold py-2 px-4 rounded"
@@ -34,12 +32,7 @@
     </button>
 
     <script>
-      function deleteCity(cityId) {
-        fetch(`/delete_city/${cityId}`, {
-          method: "DELETE",
-        }).then(() => fetchCities());
-      }
-
+      // Function to fetch cities and update DOM
       function fetchCities() {
         fetch("/cities")
           .then((response) => response.json())
@@ -54,12 +47,13 @@
                         <p class="text-zinc-600 dark:text-zinc-300">Temperature: ${city.temperature}K</p>
                         <p class="text-zinc-600 dark:text-zinc-300">Humidity: ${city.humidity}RH</p>
                         <button class="border-2 border-red-500 px-2 py-1 rounded  hover:bg-red-500 text-white" onclick="deleteCity(${city.id})">Delete</button>
-                        </div>
+                    </div>
                 `;
               citiesList.appendChild(cityElement);
             });
           });
       }
+
       // Function to add a new city
       function addCity() {
         const cityName = prompt("Enter city name:");
@@ -71,10 +65,45 @@
           body: JSON.stringify({ city: cityName }),
         }).then(() => fetchCities());
       }
+
       // Fetch cities on page load
       fetchCities();
 
-      function getGraph(city_name) {}
+      // Chart.js for plotting temperature graph
+      var ctx = document.getElementById('temperature-chart').getContext('2d');
+      var temperatureChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [], // Array to store time stamps
+          datasets: [{
+            label: 'Temperature',
+            data: [], // Array to store temperature readings
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+
+      // Function to update temperature chart
+      function updateTemperatureChart() {
+        // Add current time stamp
+        temperatureChart.data.labels.push(new Date().toLocaleTimeString());
+        // Add last temperature reading from weather_data array
+        temperatureChart.data.datasets[0].data.push(weather_data[weather_data.length - 1][1]);
+        // Update chart
+        temperatureChart.update();
+      }
+
+      // Update temperature chart every 5 minutes
+      setInterval(updateTemperatureChart, 5 * 60 * 1000);
     </script>
   </body>
 </html>

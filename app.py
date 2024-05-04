@@ -1,8 +1,11 @@
 from flask import Flask, jsonify, request, render_template
 import sqlite3
 import requests
+import time
 
 app = Flask(__name__)
+
+weather_data = []
 
 def connect_db():
     conn = sqlite3.connect("weather_data.db")
@@ -25,22 +28,18 @@ create_table()
 def fetch_and_save_weather_data(city_name):
     api_key = '66e13fd96a3720af7e158494b56b3514'
     url = f'http://api.openweathermap.org/data/2.5/weather?q={city_name}&appid={api_key}'
-    print(url)
-    print('fetching city data...'+city_name)
     response = requests.get(url)
     data = response.json()
-    print(data)
     if data.get('main') and data.get('main').get('temp') and data.get('main').get('humidity'):
         temperature = data['main']['temp']
         humidity = data['main']['humidity']
-        print(temperature)
-        print(humidity)
         conn = connect_db()
         cursor = conn.cursor()
         cursor.execute("""INSERT INTO weather_data (city_name, temperature, humidity) 
                           VALUES (?, ?, ?);""", (city_name, temperature, humidity))
         conn.commit()
         conn.close()
+        weather_data.append((city_name, temperature, humidity))
         return True
     else:
         return False
@@ -68,7 +67,6 @@ def add_city():
 
 @app.route('/delete_city/<city_id>', methods=['DELETE'])
 def delete_city(city_id):
-    print(city_id)
     conn = connect_db()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM weather_data WHERE id=?", (int(city_id),))
@@ -83,11 +81,7 @@ def get_weather_data(city_id):
     cursor.execute("SELECT * FROM weather_data WHERE id=?", (int(city_id),))
     data = cursor.fetchall()
     conn.close()
-    weather_data=[]
-    print(weather_data)
-    
-    # Return the data as JSON
-    return jsonify(weather_data)
+    return jsonify(data)
 
 @app.route('/cities', methods=['GET'])
 def get_cities():
