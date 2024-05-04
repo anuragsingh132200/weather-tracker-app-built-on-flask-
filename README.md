@@ -28,9 +28,9 @@ cd weather-tracker-app-built-on-flask-
 3. Install the required Python packages:
 
 ```bash
-pip install -r requirements.txt
+pip install flask requests
 ```
-
+** if you want then you can even create a venv for not disturbing versioning of the files
 4. Run the Flask application:
 
 ```bash
@@ -51,4 +51,3 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ```
 
-Replace `https://github.com/yourusername/yourrepository.git` with the actual URL of your GitHub repository, and replace `yourrepository` with the actual name of your repository. Also, make sure to update the `Usage` section with the correct API endpoints and methods if they're different.
